@@ -8,19 +8,7 @@ Works in up-to-date Chrome or Edge on Windows, Mac and Linux. Safari and Firefox
 
 ---
 
-## 1. Publish it on GitHub Pages (one time, about 10 minutes)
-
-1. Create an account at https://github.com if you don't have one.
-2. Top right: **+ > New repository**. Name: `karaoke-captions`. Visibility: **Public** (free GitHub Pages requires it). **Create repository**.
-3. In the new repository: **Add file > Upload files**. Drag **everything** in this folder (`index.html`, `css`, `js`, `README.md`, `LEEME.md`). **Commit changes**.
-4. **Settings > Pages**. Under *Source* choose **Deploy from a branch**, branch **main**, folder **/ (root)**. **Save**.
-5. Wait 1 or 2 minutes. The address looks like this: `https://YOUR-USERNAME.github.io/karaoke-captions/`
-
-That is the link you share with the editors. There is nothing else to maintain.
-
-> It does not work by double-clicking `index.html`: browsers block parts of the app when it runs from a local file. It has to be opened from the web address.
-
-## 2. Using it
+## 1. Using it
 
 1. **Audio:** drag in the VO. WAV, MP3, M4A, MP4 and MOV all work. If the VO is spread across the sequence, export just the sequence audio (File > Export > Media, WAV or MP3) and drag that file in. **The audio must start at the same point as the sequence** so the timing lines up.
 2. **Script (optional):** paste the brief's script, including the opener if the VO says it. It fixes brand names and words the transcription got wrong ("Guardia" becomes "Guardio") and lists anything the talent said differently from the script.
@@ -30,7 +18,7 @@ That is the link you share with the editors. There is nothing else to maintain.
 6. **Review:** edit the text of any line. ✂ splits the line at the cursor, ⤓ merges it with the next one, ✕ deletes it. Click the time to hear it. The preview shows the result; under "Preview style" you can load a frame from the video as the background and the safe zone overlay PNG.
 7. **Export:** **Karaoke SRT** for Premiere. **Plain SRT** if the client asks for it. **Save project** keeps everything so you can fix it later (Open project).
 
-## 3. In Premiere
+## 2. In Premiere
 
 1. **Import** the karaoke SRT and drag it into the sequence, starting at 00:00.
 2. Apply the house style to the caption track (Essential Graphics > Track Style). The style sets the font, size, stroke, background box, shadow and position. The active word color comes from the SRT and is kept.
@@ -40,7 +28,7 @@ That is the link you share with the editors. There is nothing else to maintain.
 
 **Small fixes:** each word is its own caption. To shift when a word lights up, move the edit point between two captions. For bigger changes, fix it in the app (Open project) and export again.
 
-## 4. For whoever maintains it (optional)
+## 3. For whoever maintains it (optional)
 
 - The code lives in `js/app.js` (interface, transcription, export), `js/core.js` (script matching and line breaks) and `js/i18n.js` (interface text in English and Spanish; add a language by copying one of the blocks). There is no server or database.
 - The transcription library is pinned to an exact version (`@huggingface/transformers@3.8.1`), so outside updates don't change it.
