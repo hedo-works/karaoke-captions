@@ -57,3 +57,5 @@ details summary { cursor: pointer; color: var(--dim); margin-bottom: 8px; }
 .diff .t { color: var(--dim); margin-right: 6px; cursor: pointer; }
 .heard { color: var(--err); } .script { color: var(--ok); }
 .exports .btn { width: 100%; margin-bottom: 8px; }
+.drop span { display: block; word-break: break-all; }
+.langSel { width: auto; padding: 6px 8px; }

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,10 +10,14 @@
 <body>
 <header>
   <h1>Karaoke Captions</h1>
-  <span class="sub">Subtítulos karaoke para Premiere · todo se procesa en tu equipo</span>
+  <span class="sub" data-i18n="tagline"></span>
   <div class="hdr-actions">
-    <label class="btn sec">Abrir proyecto<input type="file" id="openProject" accept=".json" hidden></label>
-    <button class="btn sec" id="saveProject" disabled>Guardar proyecto</button>
+    <select id="uiLang" class="langSel" title="Language / Idioma">
+      <option value="en">English</option>
+      <option value="es">Español</option>
+    </select>
+    <label class="btn sec"><span data-i18n="openProject"></span><input type="file" id="openProject" accept=".json" hidden></label>
+    <button class="btn sec" id="saveProject" disabled data-i18n="saveProject"></button>
   </div>
 </header>
 
@@ -21,80 +25,80 @@
   <!-- LEFT: input + settings -->
   <section class="col left">
     <div class="card">
-      <h2>1. Audio</h2>
+      <h2 data-i18n="s1"></h2>
       <label class="drop" id="drop">
-        <b>Arrastra el VO o el video</b>
-        <span id="fileName">WAV, MP3, M4A, MP4 o MOV. También puedes exportar el audio de la secuencia.</span>
+        <b data-i18n="dropTitle"></b>
+        <span id="fileName" data-i18n="dropHint"></span>
         <input type="file" id="file" accept="audio/*,video/*,.wav,.mp3,.m4a,.aac,.mp4,.mov" hidden>
       </label>
       <div class="grid2">
-        <div><label for="lang">Idioma del VO</label>
-          <select id="lang"><option value="english">Inglés</option><option value="spanish">Español</option></select></div>
-        <div><label for="model">Transcripción</label>
+        <div><label for="lang" data-i18n="voLang"></label>
+          <select id="lang"><option value="english" data-i18n="langEn"></option><option value="spanish" data-i18n="langEs"></option></select></div>
+        <div><label for="model" data-i18n="transcription"></label>
           <select id="model">
-            <option value="onnx-community/whisper-base_timestamped">Rápida (base)</option>
-            <option value="onnx-community/whisper-small_timestamped">Más precisa (small)</option>
+            <option value="onnx-community/whisper-base_timestamped" data-i18n="modelFast"></option>
+            <option value="onnx-community/whisper-small_timestamped" data-i18n="modelAcc"></option>
           </select></div>
       </div>
     </div>
 
     <div class="card">
-      <h2>2. Script <span class="opt">opcional</span></h2>
-      <textarea id="script" placeholder="Pega el script del brief, incluido el opener si el VO lo dice. Sirve para corregir palabras mal transcritas (marcas, nombres)."></textarea>
+      <h2><span data-i18n="s2"></span> <span class="opt" data-i18n="optional"></span></h2>
+      <textarea id="script" data-i18n-ph="scriptPh"></textarea>
     </div>
 
     <div class="card">
-      <h2>3. Márgenes y texto</h2>
-      <p class="hint">Usa los mismos valores del estilo de Premiere que vas a aplicar. La app corta las líneas para que ninguna pase el ancho seguro.</p>
+      <h2 data-i18n="s3"></h2>
+      <p class="hint" data-i18n="s3hint"></p>
       <div class="grid2">
-        <div><label for="frameW">Frame (ancho × alto)</label>
+        <div><label for="frameW" data-i18n="frame"></label>
           <div class="pair"><input type="number" id="frameW" value="1080"><input type="number" id="frameH" value="1920"></div></div>
-        <div><label for="safeW">Ancho seguro (px)</label><input type="number" id="safeW" value="782"></div>
-        <div><label for="font">Fuente</label><input id="font" list="fontList" value="Montserrat"><datalist id="fontList"></datalist></div>
-        <div><label for="weight">Peso</label>
+        <div><label for="safeW" data-i18n="safeW"></label><input type="number" id="safeW" value="782"></div>
+        <div><label for="font" data-i18n="font"></label><input id="font" list="fontList" value="Montserrat"><datalist id="fontList"></datalist></div>
+        <div><label for="weight" data-i18n="weight"></label>
           <select id="weight"><option>400</option><option>500</option><option>600</option><option selected>700</option><option>800</option><option>900</option></select></div>
-        <div><label for="size">Tamaño (px)</label><input type="number" id="size" value="70"></div>
-        <div><label for="stroke">Stroke (px)</label><input type="number" id="stroke" value="6"></div>
-        <div><label for="maxChars">Máx. caracteres</label><input type="number" id="maxChars" value="32"></div>
-        <div><label for="posY">Posición vertical (px)</label><input type="number" id="posY" value="1300"></div>
+        <div><label for="size" data-i18n="size"></label><input type="number" id="size" value="70"></div>
+        <div><label for="stroke" data-i18n="stroke"></label><input type="number" id="stroke" value="6"></div>
+        <div><label for="maxChars" data-i18n="maxChars"></label><input type="number" id="maxChars" value="32"></div>
+        <div><label for="posY" data-i18n="posY"></label><input type="number" id="posY" value="1300"></div>
       </div>
-      <button class="link" id="loadFonts">Ver mis fuentes instaladas</button>
+      <button class="link" id="loadFonts" data-i18n="seeFonts"></button>
     </div>
 
     <div class="card">
-      <h2>4. Resaltado</h2>
+      <h2 data-i18n="s4"></h2>
       <div class="grid2">
-        <div><label for="hl">Color de la palabra activa</label><input type="color" id="hl" value="#ffd000"></div>
-        <div><label for="mode">Modo</label>
-          <select id="mode"><option value="current">Solo la palabra actual</option><option value="progressive">Acumulado (las dichas quedan resaltadas)</option></select></div>
-        <div><label><input type="checkbox" id="useBase"> Fijar color base</label><input type="color" id="base" value="#ffffff"></div>
-        <div><label for="minWord">Duración mínima por palabra (ms)</label><input type="number" id="minWord" value="60"></div>
+        <div><label for="hl" data-i18n="hlColor"></label><input type="color" id="hl" value="#ffd000"></div>
+        <div><label for="mode" data-i18n="mode"></label>
+          <select id="mode"><option value="current" data-i18n="modeCurrent"></option><option value="progressive" data-i18n="modeProg"></option></select></div>
+        <div><label><input type="checkbox" id="useBase"> <span data-i18n="fixBase"></span></label><input type="color" id="base" value="#ffffff"></div>
+        <div><label for="minWord" data-i18n="minWord"></label><input type="number" id="minWord" value="60"></div>
       </div>
-      <p class="hint">Si no fijas el color base, el color normal lo pone el estilo de Premiere.</p>
+      <p class="hint" data-i18n="s4hint"></p>
     </div>
 
-    <button class="btn primary" id="go" disabled>Generar subtítulos</button>
+    <button class="btn primary" id="go" disabled data-i18n="generate"></button>
     <div class="bar"><i id="prog"></i></div>
-    <div id="status">Carga un audio para empezar.</div>
+    <div id="status"></div>
   </section>
 
   <!-- CENTER: preview -->
   <section class="col mid">
     <div class="card preview">
-      <h2>Vista previa <span class="opt">aproximada al estilo de Premiere</span></h2>
+      <h2><span data-i18n="preview"></span> <span class="opt" data-i18n="previewNote"></span></h2>
       <div class="canvasWrap"><canvas id="cv" width="1080" height="1920"></canvas></div>
       <audio id="player" controls></audio>
       <details>
-        <summary>Estilo de la vista previa</summary>
+        <summary data-i18n="previewStyle"></summary>
         <div class="grid2">
-          <div><label for="pvFill">Color base</label><input type="color" id="pvFill" value="#ffffff"></div>
-          <div><label for="pvStroke">Color stroke</label><input type="color" id="pvStroke" value="#000000"></div>
-          <div><label><input type="checkbox" id="pvBox"> Recuadro</label><input type="color" id="pvBoxColor" value="#000000"></div>
-          <div><label for="pvBoxOp">Opacidad recuadro %</label><input type="number" id="pvBoxOp" value="60"></div>
-          <div><label><input type="checkbox" id="pvShadow" checked> Sombra</label><input type="color" id="pvShadowColor" value="#000000"></div>
-          <div><label for="pvBg">Fondo de prueba</label><label class="btn sec small">Cargar imagen<input type="file" id="pvBg" accept="image/*" hidden></label></div>
-          <div><label for="pvOverlay">Overlay de zona segura</label><label class="btn sec small">Cargar PNG<input type="file" id="pvOverlay" accept="image/png" hidden></label></div>
-          <div><label><input type="checkbox" id="pvGuides" checked> Mostrar ancho seguro</label></div>
+          <div><label for="pvFill" data-i18n="pvFill"></label><input type="color" id="pvFill" value="#ffffff"></div>
+          <div><label for="pvStroke" data-i18n="pvStroke"></label><input type="color" id="pvStroke" value="#000000"></div>
+          <div><label><input type="checkbox" id="pvBox"> <span data-i18n="pvBox"></span></label><input type="color" id="pvBoxColor" value="#000000"></div>
+          <div><label for="pvBoxOp" data-i18n="pvBoxOp"></label><input type="number" id="pvBoxOp" value="60"></div>
+          <div><label><input type="checkbox" id="pvShadow" checked> <span data-i18n="pvShadow"></span></label><input type="color" id="pvShadowColor" value="#000000"></div>
+          <div><label data-i18n="pvBg"></label><label class="btn sec small"><span data-i18n="loadImage"></span><input type="file" id="pvBg" accept="image/*" hidden></label></div>
+          <div><label data-i18n="pvOverlay"></label><label class="btn sec small"><span data-i18n="loadPng"></span><input type="file" id="pvOverlay" accept="image/png" hidden></label></div>
+          <div><label><input type="checkbox" id="pvGuides" checked> <span data-i18n="pvGuides"></span></label></div>
         </div>
       </details>
     </div>
@@ -103,23 +107,25 @@
   <!-- RIGHT: results -->
   <section class="col right">
     <div class="card">
-      <h2>Subtítulos <span class="opt" id="nCaps"></span></h2>
-      <p class="hint">Edita el texto directamente. Clic en el tiempo para escucharlo. Si cambias la cantidad de palabras, los tiempos de esa línea se reparten solos.</p>
+      <h2><span data-i18n="captions"></span> <span class="opt" id="nCaps"></span></h2>
+      <p class="hint" data-i18n="capsHint"></p>
       <div id="caps" class="caps"></div>
     </div>
     <div class="card">
-      <h2>Diferencias con el script <span class="opt" id="nDiffs"></span></h2>
-      <div id="diffs" class="diffs"><p class="hint">Aparecen aquí si pegas el script.</p></div>
+      <h2><span data-i18n="diffsTitle"></span> <span class="opt" id="nDiffs"></span></h2>
+      <div id="diffs" class="diffs"><p class="hint" data-i18n="diffsHint"></p></div>
     </div>
     <div class="card exports">
-      <h2>5. Exportar</h2>
-      <button class="btn primary" id="expKaraoke" disabled>SRT karaoke (para Premiere)</button>
-      <button class="btn sec" id="expPlain" disabled>SRT normal</button>
-      <p class="hint">En Premiere: importa el SRT, arrástralo a la secuencia, aplica el estilo (.prtextstyle) a la pista y, si quieres, Upgrade to caption graphics.</p>
+      <h2 data-i18n="s5"></h2>
+      <button class="btn primary" id="expKaraoke" disabled data-i18n="expKaraoke"></button>
+      <button class="btn sec" id="expPlain" disabled data-i18n="expPlain"></button>
+      <p class="hint" data-i18n="expHint"></p>
     </div>
   </section>
 </main>
 
+<script src="js/i18n.js"></script>
+<script>I18N.apply();</script>
 <script src="js/core.js"></script>
 <script type="module" src="js/app.js"></script>
 </body>

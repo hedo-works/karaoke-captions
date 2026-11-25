@@ -6,6 +6,7 @@
 const TRANSFORMERS = "https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1";
 const $ = (id) => document.getElementById(id);
 const K = window.KCore;
+const t = (k, v) => window.I18N.t(k, v);
 
 // ---------------- settings (remembered per browser) ----------------
 const SETTINGS = ["lang", "model", "frameW", "frameH", "safeW", "font", "weight", "size", "stroke", "maxChars", "posY",
@@ -26,8 +27,17 @@ for (const id of SETTINGS) $(id).addEventListener("input", () => { localStorage.
 $("script").addEventListener("input", () => localStorage.setItem("kc.script", $("script").value));
 
 // ---------------- status ----------------
+let lastStatus = ["start", null, ""];
 const ui = {
-  status(t, kind) { $("status").textContent = t; $("status").className = kind || ""; },
+  // key = translation key; plain = already-written text (error messages)
+  status(key, vars, kind) { lastStatus = [key, vars, kind]; $("status").textContent = t(key, vars); $("status").className = kind || ""; },
+  raw(text, kind) { lastStatus = [null, text, kind]; $("status").textContent = text; $("status").className = kind || ""; },
+  // fn rebuilds the text, so it can be translated again when the language changes
+  dyn(fn, kind) { lastStatus = [fn, null, kind]; $("status").textContent = fn(); $("status").className = kind || ""; },
+  refresh() {
+    if (typeof lastStatus[0] === "function") ui.dyn(lastStatus[0], lastStatus[2]);
+    else if (lastStatus[0]) ui.status(lastStatus[0], lastStatus[1], lastStatus[2]);
+  },
   progress(f) { $("prog").style.width = Math.max(0, Math.min(1, f)) * 100 + "%"; },
 };
 
@@ -45,7 +55,7 @@ function loadFile(f) {
   $("fileName").textContent = f.name + " · " + (f.size / 1048576).toFixed(1) + " MB";
   $("drop").classList.add("ok");
   $("player").src = URL.createObjectURL(f);
-  f.arrayBuffer().then((b) => { audioBytes = b; $("go").disabled = false; ui.status("Listo para generar."); });
+  f.arrayBuffer().then((b) => { audioBytes = b; $("go").disabled = false; ui.status("ready"); });
 }
 $("file").addEventListener("change", (e) => loadFile(e.target.files[0]));
 const drop = $("drop");
@@ -55,13 +65,13 @@ drop.addEventListener("drop", (e) => { e.preventDefault(); drop.classList.remove
 
 // ---------------- fonts ----------------
 $("loadFonts").addEventListener("click", async () => {
-  if (!window.queryLocalFonts) { ui.status("Este navegador no permite listar fuentes. Escribe el nombre exacto de la fuente (como aparece en Premiere)."); return; }
+  if (!window.queryLocalFonts) { ui.status("noFontApi"); return; }
   try {
     const fonts = await window.queryLocalFonts();
     const fams = [...new Set(fonts.map((f) => f.family))].sort();
     $("fontList").innerHTML = fams.map((f) => `<option value="${f.replace(/"/g, "&quot;")}">`).join("");
-    ui.status(fams.length + " fuentes disponibles. Empieza a escribir en el campo Fuente.");
-  } catch (e) { ui.status("No se pudieron leer las fuentes: " + e.message, "err"); }
+    ui.status("fontsAvailable", { n: fams.length });
+  } catch (e) { ui.status("fontsError", { m: e.message }, "err"); }
 });
 const mctx = document.createElement("canvas").getContext("2d");
 function fontCss(st, size) { return `${st.weight} ${size || st.size}px "${st.font}", sans-serif`; }
@@ -105,7 +115,7 @@ async function loadModel(model, forceWasm) {
   if (!forceWasm) { try { gpu = !!(navigator.gpu && (await navigator.gpu.requestAdapter())); } catch (e) { } }
   const progress_callback = (p) => {
     if (p.status === "progress" && p.total) {
-      ui.status("Descargando el modelo (solo la primera vez): " + Math.round(p.loaded / 1048576) + " / " + Math.round(p.total / 1048576) + " MB");
+      ui.status("downloading", { a: Math.round(p.loaded / 1048576), b: Math.round(p.total / 1048576) });
       ui.progress(0.05 + 0.2 * (p.loaded / p.total));
     }
   };
@@ -114,15 +124,15 @@ async function loadModel(model, forceWasm) {
   tries.push({ device: "wasm", dtype: { encoder_model: "fp32", decoder_model_merged: "q8" } });
   tries.push({ device: "wasm", dtype: "fp32" });
   let err = null;
-  for (const t of tries) {
+  for (const tr of tries) {
     try {
-      ui.status("Cargando el modelo de transcripción (" + t.device + ")...");
-      asr = await pipeline("automatic-speech-recognition", model, Object.assign({ progress_callback }, t));
-      asr._device = t.device; asrKey = key;
+      ui.status("loadingModel", { d: tr.device });
+      asr = await pipeline("automatic-speech-recognition", model, Object.assign({ progress_callback }, tr));
+      asr._device = tr.device; asrKey = key;
       return asr;
     } catch (e) { err = e; console.warn(e); }
   }
-  throw new Error("No se pudo cargar el modelo: " + (err && err.message));
+  throw new Error(t("modelFail", { m: err && err.message }));
 }
 function wordsOf(result, off) {
   const out = [];
@@ -147,12 +157,12 @@ async function transcribe(audio, st) {
   let all = [];
   for (let i = 0; i < wins.length; i++) {
     const [a, b] = wins[i];
-    ui.status("Transcribiendo " + (i + 1) + " de " + wins.length + "..."); ui.progress(0.25 + 0.6 * i / wins.length);
+    ui.status("transcribing", { i: i + 1, n: wins.length }); ui.progress(0.25 + 0.6 * i / wins.length);
     await new Promise((r) => setTimeout(r, 30));
     const opts = { return_timestamps: "word", language: st.lang, task: "transcribe" };
     let ws = wordsOf(await pipe(audio.subarray(a, b), opts), a / 16000);
     if (pipe._device === "webgpu" && timesLookBroken(ws)) {     // known WebGPU issue with word times
-      ui.status("Reintentando sin aceleración de GPU...");
+      ui.status("retryCpu");
       pipe = await loadModel(st.model, true);
       ws = wordsOf(await pipe(audio.subarray(a, b), opts), a / 16000);
     }
@@ -168,14 +178,13 @@ $("go").addEventListener("click", async () => {
   const st = settings();
   $("go").disabled = true; ui.progress(0.02);
   try {
-    if (!fontAvailable(st)) ui.status('Aviso: la fuente "' + st.font + '" no está instalada en este equipo; los cortes se calculan con una fuente parecida.');
-    ui.status("Preparando el audio...");
+    ui.status("preparing");
     const audio = await decodeTo16k(audioBytes);
     const words = await transcribe(audio, st);
-    if (!words.length) throw new Error("La transcripción salió vacía. ¿El archivo tiene voz audible?");
+    if (!words.length) throw new Error(t("emptyTranscript"));
     buildFromWords(words, st);
   } catch (e) {
-    console.error(e); ui.status(e.message || String(e), "err");
+    console.error(e); ui.raw(e.message || String(e), "err");
   } finally { $("go").disabled = !audioBytes; }
 });
 function buildFromWords(words, st) {
@@ -187,7 +196,8 @@ function buildFromWords(words, st) {
       .map((c) => ({ s: c.s, e: c.e, words: c.words.map((w) => ({ w: w.w, t: w.t })) }));
     renderCaps(); renderDiffs();
     ui.progress(1);
-    ui.status("Listo: " + caps.length + " líneas." + (diffs.length ? " Revisa las diferencias con el script." : ""), "ok");
+    const nC = caps.length, nD = diffs.length, fontOk = fontAvailable(st), fnt = st.font;
+    ui.dyn(() => t("done", { n: nC }) + (nD ? t("checkDiffs") : "") + (fontOk ? "" : "\n" + t("fontMissing", { f: fnt })), "ok");
     setExports(true);
 }
 window.__kcBuildFromWords = buildFromWords;   // used by the automated tests
@@ -203,12 +213,12 @@ function renderCaps() {
   $("caps").innerHTML = caps.map((c, i) => {
     const over = measure(capText(c), st) > st.safeW;
     return `<div class="cap" data-i="${i}">
-      <span class="t" title="Escuchar">${fmt(c.s)}</span>
-      <input value="${esc(capText(c))}" class="${over ? "over" : ""}" title="${over ? "Esta línea se pasa del ancho seguro" : ""}">
+      <span class="t" title="${esc(t("listen"))}">${fmt(c.s)}</span>
+      <input value="${esc(capText(c))}" class="${over ? "over" : ""}" title="${over ? esc(t("over")) : ""}">
       <span class="tools">
-        <button data-a="split" title="Partir en la posición del cursor">✂</button>
-        <button data-a="merge" title="Unir con la siguiente">⤓</button>
-        <button data-a="del" title="Borrar">✕</button>
+        <button data-a="split" title="${esc(t("split"))}">✂</button>
+        <button data-a="merge" title="${esc(t("merge"))}">⤓</button>
+        <button data-a="del" title="${esc(t("del"))}">✕</button>
       </span></div>`;
   }).join("");
 }
@@ -246,12 +256,12 @@ $("caps").addEventListener("click", (e) => {
 });
 function renderDiffs() {
   $("nDiffs").textContent = diffs.length ? "(" + diffs.length + ")" : "";
-  const label = { fixed: "Corregido con el script", changed: "Dice distinto al script" };
+  const label = { fixed: t("fixed"), changed: t("changed") };
   $("diffs").innerHTML = diffs.length ? diffs.map((d) =>
     `<div class="diff"><span class="t" data-t="${d.t}">${fmt(d.t)}</span>${label[d.type] || d.type}: ` +
-    (d.heard ? `<span class="heard">${esc(d.heard)}</span>` : "<i>(no lo dice)</i>") + " → " +
-    (d.script ? `<span class="script">${esc(d.script)}</span>` : "<i>(no está en el script)</i>") + "</div>").join("")
-    : '<p class="hint">' + ($("script").value.trim() ? "Sin diferencias." : "Aparecen aquí si pegas el script.") + "</p>";
+    (d.heard ? `<span class="heard">${esc(d.heard)}</span>` : "<i>" + t("notSaid") + "</i>") + " → " +
+    (d.script ? `<span class="script">${esc(d.script)}</span>` : "<i>" + t("notInScript") + "</i>") + "</div>").join("")
+    : '<p class="hint">' + ($("script").value.trim() && caps.length ? t("noDiffs") : t("diffsHint")) + "</p>";
 }
 $("diffs").addEventListener("click", (e) => { const t = e.target.dataset.t; if (t) { $("player").currentTime = +t; $("player").play(); } });
 
@@ -354,10 +364,19 @@ $("openProject").addEventListener("change", async (e) => {
   const f = e.target.files[0]; if (!f) return;
   try {
     const p = JSON.parse(await f.text());
-    if (p.app !== "karaoke-captions") throw new Error("Ese archivo no es un proyecto de Karaoke Captions.");
+    if (p.app !== "karaoke-captions") throw new Error(t("notProject"));
     for (const id of SETTINGS) if (p.settings && p.settings[id] !== undefined) setVal(id, p.settings[id]);
     $("script").value = p.script || ""; caps = p.caps || []; diffs = p.diffs || []; projectName = p.name || "captions";
     renderCaps(); renderDiffs(); setExports(true); drawFrame();
-    ui.status("Proyecto abierto. Carga también el audio si quieres escucharlo en la vista previa.", "ok");
-  } catch (err) { ui.status(err.message, "err"); }
+    ui.status("projectOpened", null, "ok");
+  } catch (err) { ui.raw(err.message, "err"); }
 });
+
+// ---------------- interface language ----------------
+$("uiLang").value = window.I18N.lang;
+$("uiLang").addEventListener("change", (e) => window.I18N.setLang(e.target.value));
+document.addEventListener("kc-lang", () => {
+  ui.refresh(); renderDiffs(); if (caps.length) renderCaps();
+  if (audioFile) $("fileName").textContent = audioFile.name + " · " + (audioFile.size / 1048576).toFixed(1) + " MB";
+});
+ui.status("start");
